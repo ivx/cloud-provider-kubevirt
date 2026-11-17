@@ -11,6 +11,8 @@ on:
 
 jobs:
   publish:
+    # ivx fork: the quay.io secrets exist only upstream.
+    if: github.repository == 'kubevirt/cloud-provider-kubevirt'
     runs-on: ubuntu-latest
     env:
       VERSION: ${{github.ref_name}}

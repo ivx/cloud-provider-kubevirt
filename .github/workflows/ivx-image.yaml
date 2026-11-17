@@ -1,0 +1,33 @@
+# ivx fork only: build the CCM image to ghcr.io/ivx from the fork's ivx/* branches.
+# Not part of any upstream PR (the upstream changes live on their own branches).
+name: ivx-image
+
+on:
+  push:
+    branches:
+      - 'ivx/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  image:
+    if: github.repository_owner == 'ivx'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - name: Version from the branch and commit
+        id: version
+        run: echo "version=$(echo '${{ github.ref_name }}' | tr '/' '-')-$(git rev-parse --short=8 HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Log in to ghcr.io
+        run: echo '${{ secrets.GITHUB_TOKEN }}' | docker login ghcr.io -u '${{ github.actor }}' --password-stdin
+      - name: Build and push image
+        run: make image push REGISTRY=ghcr.io/ivx VERSION=${{ steps.version.outputs.version }}
+      - name: Summary
+        run: echo "ghcr.io/ivx/kubevirt-cloud-controller-manager:${{ steps.version.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
